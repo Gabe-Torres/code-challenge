@@ -28,7 +28,7 @@
               <th>Tag</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="address-components">         
           </tbody>
         </table>
       </div>
@@ -38,5 +38,52 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{% static 'js/index.js' %}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelector('form').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+      const addressInput = document.getElementById('address').value;
+      
+      fetch(`/api/parse/?address=${encodeURIComponent(addressInput)}`)
+        .then(response => {
+            if (!response.ok) {
+            throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const resultsDiv = document.getElementById('address-results');
+            const parseType = document.getElementById('parse-type');
+            const addressComponentsTable = document.getElementById('address-components');
+            // const addressComponentsTable = resultsDiv.querySelector('tbody');
+
+      
+            // Clear previous results
+            addressComponentsTable.innerHTML = '';
+      
+            if (data.error) {
+            resultsDiv.style.display = 'none';
+            alert(data.error);
+            } else {
+            parseType.textContent = data.address_type;
+      
+            for (const [component, tag] of Object.entries(data.address_components)) {
+              const row = addressComponentsTable.insertRow();
+              const cell1 = row.insertCell(0);
+              const cell2 = row.insertCell(1);
+              cell1.textContent = component;
+              cell2.textContent = tag;
+            }
+      
+            resultsDiv.style.display = 'block';
+            }
+        })
+        .catch(error => {
+          console.error('There was a problem with the request:', error);
+          alert('There was a problem with the request: ' + error.message + '\n' + error.stack);
+        });
+      });
+  });
+  </script>
 {% endblock %}
