@@ -20,9 +20,6 @@ class AddressParse(APIView):
 
         address_components, address_type = self.parse(input_string)
 
-        if address_components is None:
-            raise ParseError("Invalid address format")
-
         return Response({
             'input_string': input_string,
             'address_components': address_components,
@@ -33,5 +30,5 @@ class AddressParse(APIView):
         try:
             address_components, address_type = usaddress.tag(address)
         except usaddress.RepeatedLabelError:
-            address_components, address_type = None, "Invalid"
+            raise ParseError("Invalid address format")
         return address_components, address_type
