@@ -47,11 +47,13 @@
       
       fetch(`/api/parse/?address=${encodeURIComponent(addressInput)}`)
         .then(response => {
-            if (!response.ok) {
-            throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
+          if (!response.ok) {
+          return response.json().then(errorData => {
+            throw new Error(errorData.detail || 'Network response was not ok');
+          });
+        }
+        return response.json();
+      })
         .then(data => {
             const resultsDiv = document.getElementById('address-results');
             const parseType = document.getElementById('parse-type');
@@ -59,10 +61,6 @@
 
             addressComponentsTable.innerHTML = '';
       
-            if (data.error) {
-            resultsDiv.style.display = 'none';
-            alert(data.error);
-            } else {
             parseType.textContent = data.address_type;
       
             for (const [component, tag] of Object.entries(data.address_components)) {
@@ -74,7 +72,6 @@
             }
       
             resultsDiv.style.display = 'block';
-            }
         })
         .catch(error => {
           console.error('There was a problem with the request:', error);
