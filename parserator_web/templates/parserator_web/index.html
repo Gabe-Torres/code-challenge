@@ -18,6 +18,7 @@
         </form>
       </div>
       <!-- TODO: Display parsed address components here. -->
+      <div id="error-message" style="color: white; background-color: red; display: none; border: 1px solid red; padding: 10px; border-radius: 5px;"></div>
       <div id="address-results" style="display:none">
         <h4>Parsing results</h4>
         <p>Address type: <strong><span id="parse-type"></span></strong></p>
@@ -44,7 +45,12 @@
         event.preventDefault();
 
       const addressInput = document.getElementById('address').value;
-      
+      const errorMessageDiv = document.getElementById('error-message');
+      const resultsDiv = document.getElementById('address-results');
+
+      errorMessageDiv.style.display = 'none';
+      resultsDiv.style.display = 'none';
+
       fetch(`/api/parse/?address=${encodeURIComponent(addressInput)}`)
         .then(response => {
           if (!response.ok) {
@@ -55,12 +61,10 @@
         return response.json();
       })
         .then(data => {
-            const resultsDiv = document.getElementById('address-results');
             const parseType = document.getElementById('parse-type');
             const addressComponentsTable = document.getElementById('address-components');
 
             addressComponentsTable.innerHTML = '';
-      
             parseType.textContent = data.address_type;
       
             for (const [component, tag] of Object.entries(data.address_components)) {
@@ -75,7 +79,8 @@
         })
         .catch(error => {
           console.error('There was a problem with the request:', error);
-          alert('There was a problem with the request: ' + error.message + '\n' + error.stack);
+          errorMessageDiv.textContent = 'There was a problem with the request: ' + error.message;
+          errorMessageDiv.style.display = 'block';
         });
       });
   });
