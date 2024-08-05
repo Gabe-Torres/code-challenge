@@ -18,6 +18,7 @@
         </form>
       </div>
       <!-- TODO: Display parsed address components here. -->
+      <div id="error-message" style="color: white; background-color: red; display: none; border: 1px solid red; padding: 10px; border-radius: 5px;"></div>
       <div id="address-results" style="display:none">
         <h4>Parsing results</h4>
         <p>Address type: <strong><span id="parse-type"></span></strong></p>
@@ -28,7 +29,7 @@
               <th>Tag</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="address-components">         
           </tbody>
         </table>
       </div>
@@ -38,5 +39,50 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{% static 'js/index.js' %}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelector('form').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+      const addressInput = document.getElementById('address').value;
+      const errorMessageDiv = document.getElementById('error-message');
+      const resultsDiv = document.getElementById('address-results');
+
+      errorMessageDiv.style.display = 'none';
+      resultsDiv.style.display = 'none';
+
+      fetch(`/api/parse/?address=${encodeURIComponent(addressInput)}`)
+        .then(response => {
+          if (!response.ok) {
+          return response.json().then(errorData => {
+            throw new Error(errorData.detail || 'Network response was not ok');
+          });
+        }
+        return response.json();
+      })
+        .then(data => {
+            const parseType = document.getElementById('parse-type');
+            const addressComponentsTable = document.getElementById('address-components');
+
+            addressComponentsTable.innerHTML = '';
+            parseType.textContent = data.address_type;
+      
+            for (const [component, tag] of Object.entries(data.address_components)) {
+              const row = addressComponentsTable.insertRow();
+              const cell1 = row.insertCell(0);
+              const cell2 = row.insertCell(1);
+              cell1.textContent = component;
+              cell2.textContent = tag;
+            }
+      
+            resultsDiv.style.display = 'block';
+        })
+        .catch(error => {
+          console.error('There was a problem with the request:', error);
+          errorMessageDiv.textContent = 'There was a problem with the request: ' + error.message;
+          errorMessageDiv.style.display = 'block';
+        });
+      });
+  });
+  </script>
 {% endblock %}
